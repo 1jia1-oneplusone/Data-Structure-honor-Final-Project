@@ -12,6 +12,8 @@ inline int move(int x,int y);//方向键改变地图位置，以坐标形式输�
 inline int control();//处理全部鼠标信息 返回0：啥也不干 返回1：退出程序
 inline void judge_ocean();//判断是否绘制海洋
 inline void main_ui();
+inline void ui_initialize();
+inline void choose();//选择要加载的地图
 
 
 inline void ui_line(int x1,int y1,int x2,int y2,int col=-1,int thickness=-1)//用ege画线
@@ -115,7 +117,7 @@ inline void island()
 	Way wy;
 	Relation rl;
 	
-	for(int i=0;i<relation.size();i++)//以relation形式存在的岛屿
+/*	for(int i=0;i<relation.size();i++)//以relation形式存在的岛屿
 	{
 		rl=relation[i];
 		if(rl["place"]=="islet"||rl["place"]=="island")
@@ -130,7 +132,7 @@ inline void island()
 			setfillcolor(EGEARGB(0xFF, 153,153,153));
 			ege_fillpoly(cnt,tmp);
 		}
-	}
+	}*/
 	
 	
 	//厦门岛
@@ -327,11 +329,17 @@ inline void ui1()//绘制界面
 	
 	
 	//绘制relation
-/*	setlinewidth(3);
-	setcolor(BLACK);
+	setlinewidth(2*move_time[move_tm]/move_tm);
+	setcolor(YELLOW);
 	for(int i=0;i<relation.size();i++)
 	{
 		rl=relation[i];
+			frog=0;
+			for(int i=0;i<rl.cnt_tag;i++)
+			{
+				if(rl.tagv[i]=="bus")frog=1;
+			}
+			if(!frog)continue;
 		for(int i=0;i<rl.mynode.size();i++)
 		{
 			a=rl.mynode[i];
@@ -344,7 +352,7 @@ inline void ui1()//绘制界面
 			else
 				ui_area(area[rl.myway[i]],1);
 		}
-	}*/
+	}
 	
 	
 	//显示选中点，画一个靶子
@@ -378,7 +386,7 @@ inline void ui1()//绘制界面
 	{
 		find.x1=c2bx(height_map_bw);
 		cnt=0;
-		for(auto x=lower_bound(area_xy2id.begin(),area_xy2id.end(),find); x!=way_xy2id.end() ; x++,cnt++)//遍历所有way和area，显示文字
+		for(auto x=lower_bound(area_xy2id.begin(),area_xy2id.end(),find); x!=way_xy2id.end() ; x++,cnt++)//遍历way和area，显示文字
 		{
 			if(x==area_xy2id.end())//area遍历完了就切换到way
 			{
@@ -789,11 +797,6 @@ inline void judge_ocean()//判断是否绘制海洋
 
 inline void main_ui()
 {
-	initgraph(width_map_col, height_map_col, INIT_RENDERMANUAL);//创建窗口
-	
-	setrendermode(RENDER_MANUAL);//设置为手动渲染模式，以后绘制完成后，需要使用getche()等等待类函数才会显示新画的东西
-	ege_enable_aa(true);//开启抗锯齿(默认为不开启)					
-	
 	path_endpoint[0]=path_endpoint[1]=EMPTY_node;
 	path_cnt=0;
 	
@@ -803,16 +806,159 @@ inline void main_ui()
 	
 	puts("√ 绘制UI");
 	
+	puts("---------------------------");
+	puts("初始化全部完成，在地图上进行任意动作以清除以上消息。");
+	
 	bool opt;
 	
-	while(is_run())
+	while(is_run()&&!isbreak)
 	{
 		opt=control();
-		if(isbreak)break;
 	}
 	
+	return;
+}
+
+inline void ui_initialize()
+{
+	initgraph(width_map_col, height_map_col, INIT_RENDERMANUAL);//创建窗口
 	
-	closegraph();
+	setrendermode(RENDER_MANUAL);//设置为手动渲染模式，以后绘制完成后，需要使用getche()等等待类函数才会显示新画的东西
+	ege_enable_aa(true);//开启抗锯齿(默认为不开启)	
+	
+	return;
+}
+
+inline void choose_map()//选择要加载的地图
+{
+	
+	setbkcolor(EGERGB(152,209,252));	//设置背景色为浅蓝（海的颜色）
+	setcolor(BLACK);
+	
+	settextjustify(CENTER_TEXT,CENTER_TEXT);//居中
+	setfont(30, 0, "宋体", 0, 0, FW_BOLD, 0, 0, 0);
+	setbkmode(TRANSPARENT);//文字背景透明
+	
+	//left top right bottom depth topflag
+	int bottom[][6]={{65,250,365,400,10,1},{425,250,725,400,10,1},{65,450,365,600,10,1},{425,450,725,600,10,1},{250,650,550,750,10,1},{-1,0,0,0,0,0}};
+	
+	outtextxy(400,150,"请选择你要加载的地图");
+	
+	setfillcolor(0xA8A8A8);//LIGHTGRAY
+	for(int i=0;bottom[i][0]!=-1;i++)
+	{
+		bar3d(bottom[i][0],bottom[i][1],bottom[i][2],bottom[i][3],bottom[i][4],bottom[i][5]);
+		outtextxy((bottom[i][0]+bottom[i][2])/2,(bottom[i][1]+bottom[i][3])/2,map_name[i]);
+//		outtextrect(bottom[i][0],bottom[i][1],(bottom[i][2]-bottom[i][0]),(bottom[i][3]-bottom[i][1]),map_name[i]);
+//		outtextrect((bottom[i][0]+bottom[i][2])/2,(bottom[i][1]+bottom[i][3])/2,(bottom[i][2]-bottom[i][0])/2,(bottom[i][3]-bottom[i][1])/2,map_name[i]);
+	}
+	
+	int x=-1,y=-1,x1=-1,y1=-1,pick=-1,quit=0;
+	mouse_msg msg=getmouse();
+	delay_ms(1);
+	//getch();
+	
+	while(is_run()&&!isbreak&&!quit)
+	{
+		while(mousemsg() && !quit)
+		{
+			msg=getmouse();
+			
+			if(msg.is_move())//移动
+			{
+				if(pick>=0)
+				{
+					x=msg.x;y=msg.y;//记下当前鼠标位置
+					if(!(x>=bottom[pick][0] && y>=bottom[pick][1] && x<=bottom[pick][2] && y<=bottom[pick][3]))//移出按钮范围了
+					{
+						setcolor(getbkcolor());
+						setfillcolor(EGERGB(152,209,252));
+						bar3d(bottom[pick][0]-bottom[pick][4],bottom[pick][1]-bottom[pick][4],bottom[pick][2]+bottom[pick][4],bottom[pick][3]+bottom[pick][4],0,0);//涂掉原来的按钮
+					
+						setcolor(BLACK);
+						setfillcolor(0xA8A8A8);
+						bar3d(bottom[pick][0],bottom[pick][1],bottom[pick][2],bottom[pick][3],bottom[pick][4],bottom[pick][5]);
+						outtextxy((bottom[pick][0]+bottom[pick][2])/2,(bottom[pick][1]+bottom[pick][3])/2,map_name[pick]);//画新的
+						
+						pick=-1;
+					}
+				}
+			}
+			else if(msg.is_left() && msg.is_down())//左键按下
+			{
+				x=msg.x;y=msg.y;//记下当前鼠标位置
+				pick=-1;
+				for(int i=0;bottom[i][0]!=-1;i++)
+				{
+					if(x>=bottom[i][0] && y>=bottom[i][1] && x<=bottom[i][2] && y<=bottom[i][3])
+						pick=i;
+				}
+				if(pick>=0)
+				{
+					setcolor(getbkcolor());
+					setfillcolor(getbkcolor());
+					bar3d(bottom[pick][0]-bottom[pick][4],bottom[pick][1]-bottom[pick][4],bottom[pick][2]+bottom[pick][4],bottom[pick][3]+bottom[pick][4],0,0);//涂掉原来的按钮
+					
+					setcolor(BLACK);
+					setfillcolor(EGERGB(127,127,127));
+					bar3d(bottom[pick][0]+bottom[pick][4]/2,bottom[pick][1]-bottom[pick][4]/2,bottom[pick][2]+bottom[pick][4]/2,bottom[pick][3]-bottom[pick][4]/2,bottom[pick][4]/2,bottom[pick][5]);
+					outtextxy((bottom[pick][0]+bottom[pick][2]+bottom[pick][4])/2,(bottom[pick][1]+bottom[pick][3]-bottom[pick][4])/2,map_name[pick]);
+					
+				}
+			}
+			
+			else if(msg.is_left() && msg.is_up())//左键抬起
+			{
+				if(pick>=0)
+				{
+					if(x>=bottom[pick][0] && y>=bottom[pick][1] && x<=bottom[pick][2] && y<=bottom[pick][3])
+					{
+						load_map=pick;
+						quit=1;
+					}
+				
+					setcolor(getbkcolor());
+					setfillcolor(getbkcolor());
+					bar3d(bottom[pick][0]-bottom[pick][4],bottom[pick][1]-bottom[pick][4],bottom[pick][2]+bottom[pick][4],bottom[pick][3]+bottom[pick][4],0,0);//涂掉原来的按钮
+				
+					setcolor(BLACK);
+					setfillcolor(0xA8A8A8);
+					bar3d(bottom[pick][0],bottom[pick][1],bottom[pick][2],bottom[pick][3],bottom[pick][4],bottom[pick][5]);
+					outtextxy((bottom[pick][0]+bottom[pick][2])/2,(bottom[pick][1]+bottom[pick][3])/2,map_name[pick]);//画新的
+						
+				}
+			}
+					
+			else if(msg.is_right() && msg.is_down())//右键按下，中止
+			{
+				isbreak=1;
+				break;
+			}
+			delay_ms(1);
+		}
+	}
+	
+	if(map_name[pick]=="自选地图")
+	{
+		setcolor(LIGHTGRAY);
+		setfillcolor(DARKGRAY);
+		bar3d(50,300,750,500,0,0);
+		setcolor(WHITE);
+		setfont(35, 0, "宋体", 0, 0, FW_BOLD, 0, 0, 0);
+		outtextxy(400,400,"请点击控制台输入地图文件路径或相对路径");
+		
+		printf("请输入地图文件路径，或相对main.exe的路径，输入后请按enter\n");
+		
+		delay_ms(1);
+		char ch[100000];int cnt=0;
+		char c=getchar();
+		while(c>31&&c<127)
+		{
+			ch[cnt++]=c;
+			c=getchar();
+		}
+		map_list[pick]=ch;
+	}
 	
 	return;
 }

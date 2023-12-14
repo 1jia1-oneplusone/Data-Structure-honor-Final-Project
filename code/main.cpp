@@ -45,16 +45,19 @@ using namespace std;
 
 int main()
 {
-	load_map=3;
-	initialize();
+	ui_initialize();
 	
-//	MessageBox(NULL,"Initialization Finished.","I am title",NULL);
+	choose_map();
+	
+	Load_map();
 	
 //	main_draw1(1);//输出地图
 	
 	build_graph();
 	
 	main_ui();
+	
+	closegraph();//关闭ui窗口
 	
 	return 0;
 }

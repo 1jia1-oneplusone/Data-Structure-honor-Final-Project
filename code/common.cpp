@@ -24,7 +24,8 @@ using namespace std;
 
 const string EMPTY_string="---";//不可能自然生成的字符串
 const int EMPTY_number=-114514;//不可能自然生成的数字
-const char *map_list[]={"..\\map\\Gulang Island.osm","..\\map\\map_big.osm","..\\map\\map_bigger.osm","..\\map\\Fudan.osm"};//可选的地图
+const char *map_list[]={"..\\map\\Gulang Island.osm","..\\map\\map_big.osm","..\\map\\map_bigger.osm","..\\map\\Fudan.osm","---"};//可选的地图
+const char *map_name[]={"鼓浪屿地图（小）","鼓浪屿地图（中）","鼓浪屿地图（大）","五角场地图","自选地图"};//可选的地图的名字
 const int N=1000000;//一维数组默认大小
 const int M=5000;//地图默认边长
 const ll R=64000000;//地球半径

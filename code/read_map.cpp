@@ -18,7 +18,7 @@ inline bool cmp_node_v(Node *a,Node *b);//用于node_v的排序函数
 inline void get_all_node();//在set类型node中储存所有点
 inline void get_all_way();//在set类型way / area中储存所有点
 inline void get_special_node();//寻找cross点和door点
-inline void choose_map();//在地图列表中选择要显示的地图
+inline void Load_map();
 
 struct Tuple_Node{
 	int x,y;
@@ -163,7 +163,7 @@ struct Node{
 	}
 	
 		
-}node_storage[N];//所有Node的原始储存位置，之后所有地方传递node都通过传递指向该数组的指针实现
+}*node_storage;//所有Node的原始储存位置，之后所有地方传递node都通过传递指向该数组的指针实现
 inline const bool operator <(const Node x,const Node y)//重载<运算符，以便存放在set中
 {
 	return x.id < y.id;
@@ -662,13 +662,18 @@ inline bool cmp_node_v(Node *a,Node *b)//用于node_v的排序函数
 //#define debug_ge_al_no 
 inline void get_all_node()//在set类型node中储存所有点
 {
-	EMPTY_node=&node_storage[cnt_node_storage++];//创造空节点
-	
+	//分配空间
 	TiXmlElement *nd = root->FirstChildElement("node");
+	for(cnt_node_storage=1; nd; nd=nd->NextSiblingElement("node"), cnt_node_storage++);
+	node_storage=(Node *)malloc(sizeof(Node)*cnt_node_storage);
+	
+	nd = root->FirstChildElement("node");
+	EMPTY_node=node_storage;//创造空节点
+	
 	Node *tmp;
-	for(int cnt=0; nd; nd=nd->NextSiblingElement("node"), cnt++)
+	for(int cnt=1; nd; nd=nd->NextSiblingElement("node"), cnt++)
 	{
-		tmp=&node_storage[cnt_node_storage++];
+		tmp=node_storage+cnt;
 		tmp->me=nd;
 		tmp->get_attributes();
 		node[tmp->id]=tmp;
@@ -846,44 +851,9 @@ inline void get_special_node()//寻找cross点和door点
 	return;
 }
 
-inline void choose_map()//在地图列表中选择要显示的地图
-{
-	puts("即将读取默认地图。若要自行选择地图，请在3秒内按任意键");
-	
-	ll cnt=0;
-	auto begin=chrono::system_clock::now(),nowtime=begin;//记录时间
-	int ok=0;
-		
-	char key;	
-	
-	nowtime=chrono::system_clock::now();//更新时间
-	
-	while((nowtime-begin).count()<=3000000000)//3秒内
-	{
-		nowtime=chrono::system_clock::now();//更新时间
-		while(kbhit())//用户可能会连续按好几下，因此先吃掉几个
-		{
-			key=getch();
-			ok=1;
-		}
-					puts("!!");
-		//if(ok)break;
-		
-		Sleep(1);
-	}
-	
-	puts("11");
-	if(!ok)return;//没有按下任何键
-	
-	puts("请选择你要展示的地图：");
-	
-	return;
-}
 
-inline void initialize()
+inline void Load_map()
 {
-	choose_map();
-	
 	TiXmlDocument tinyXmlDoc(map_list[load_map]);	
 	tinyXmlDoc.LoadFile();
 	puts("√ 加载文件完成");
