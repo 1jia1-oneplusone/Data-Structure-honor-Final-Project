@@ -50,6 +50,13 @@ struct Node{
 		timestamp=user=EMPTY_string;
 		me=NULL;
 	}
+	inline void init(){
+		id=changeset=uid=version=visible=lat=lon=belong_way=belong_area=x=y=EMPTY_number;
+		iscross=isdoor=iswall=cnt_edge=display=0;
+		timestamp=user=EMPTY_string;
+		me=NULL;
+		return;
+	}
 	
 	inline bool is_normal()//不是cross、door、wall的普通点
 	{
@@ -57,7 +64,7 @@ struct Node{
 	}
 	inline bool is_in_way()//是否处在way中
 	{
-		return is_normal()&&belong_way!=EMPTY_number&&belong_area==EMPTY_number;
+		return belong_way!=EMPTY_number;
 	}
 	inline bool is_at_area()//是否处在area边缘
 	{
@@ -141,6 +148,7 @@ struct Node{
 	
 	inline void print()
 	{
+		if(version<0)return;
 		printf("#################################################\
 				\n#  id:\t\t\t %lld \t\t#\
 				\n#  changeset:\t\t %lld \t\t#\
@@ -163,7 +171,7 @@ struct Node{
 	}
 	
 		
-}*node_storage;//所有Node的原始储存位置，之后所有地方传递node都通过传递指向该数组的指针实现
+};
 inline const bool operator <(const Node x,const Node y)//重载<运算符，以便排序
 {
 	return x.id < y.id;
@@ -187,7 +195,8 @@ inline const bool operator <(const set<Node>::iterator &x,const set<Node>::itera
 */
 inline dbl distance(Node *a,Node *b)//两点间距离➗地球半径
 {
-	dbl t1=a->lat*pi/180,t2=b->lat*pi/180;
+	static dbl t1,t2;
+	t1=a->lat*pi/180,t2=b->lat*pi/180;
 	return acos(cos(t1)*cos(t2)+sin(t1)*sin(t2)*cos((b->lon-a->lon)*pi/180))*R;
 }
 
@@ -657,12 +666,12 @@ inline bool cmp_node_v(Node *a,Node *b)//用于node_v的排序函数
 }
 
 //#define debug_ge_al_no 
-inline void get_all_node()//在set类型node中储存所有点
+inline void get_all_node()//储存所有点
 {
 	//分配空间
 	TiXmlElement *nd = root->FirstChildElement("node");
-	for(cnt_node_storage=0; nd; nd=nd->NextSiblingElement("node"), cnt_node_storage++);
-	node_storage=(Node *)malloc(sizeof(Node)*(cnt_node_storage+1));
+	for(cnt_node_storage=0; nd; nd=nd->NextSiblingElement("node"), cnt_node_storage++, cnt_node++);
+	node_storage=(Node *)malloc(sizeof(Node)*(cnt_node_storage+10000));
 	
 	nd = root->FirstChildElement("node");
 	EMPTY_node=node_storage;//创造空节点
@@ -671,6 +680,7 @@ inline void get_all_node()//在set类型node中储存所有点
 	for(int cnt=1; nd; nd=nd->NextSiblingElement("node"), cnt++)
 	{
 		tmp=node_storage+cnt;
+		tmp->init();
 		tmp->me=nd;
 		tmp->get_attributes();
 		node[tmp->id]=tmp;
@@ -695,6 +705,9 @@ inline void get_all_way()//在vector类型way / area中储存所有点
 		#endif
 	Way *tmp;
 	Way wyy;
+	
+	way.push_back(wyy);//垫一个哨兵节点
+	
 	bool ban=0;
 	for(int cnt=0; wy; wy=wy->NextSiblingElement("way"), cnt++)
 	{
@@ -732,8 +745,10 @@ inline void get_all_way()//在vector类型way / area中储存所有点
 	}
 	
 	//按id排序
+	auto x=way.begin();x++;
 	sort(way.begin(),way.end());
 	sort(area.begin(),area.end());
+	
 	
 	for(auto x=way.begin(); x!=way.end() ; x++)//遍历所有way
 	{
@@ -792,6 +807,8 @@ inline void get_special_node()//寻找cross点和door点
 	map<ll,int>vis;
 	for(auto x=way.begin() ; x!=way.end() ; x++)//遍历所有way，寻找cross
 	{
+		if((*x).id==EMPTY_number)continue;
+		
 		yy=*x;
 		for(int i=0;i<yy.cnt_node;i++)
 		{
@@ -946,6 +963,12 @@ inline void Load_map()
 					cout<<area[i]["natural"]<<' ';
 				}
 			}
+		#endif
+		
+//#define display2 
+		#ifdef display2
+			for(int i=0;i<cnt_node;i++)
+				printf("%lld ",node_storage[i].belong_way);
 		#endif
 	return;
 }

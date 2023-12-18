@@ -568,17 +568,25 @@ inline int move(int x,int y)//方向键改变地图位置，以坐标形式输�
 	return move_dx-x!=move_dx||move_dy-y!=move_dy;//如果和一开始的dxdy一样，就不要再渲染了
 }
 
-inline int click(mouse_msg msg)//鼠标单击左键，选择该处的点
+#define debug_cl 
+inline int click(mouse_msg msg,int bad_choose=0)//鼠标单击左键，选择该处的点。bad_choose:如果选的点不在node中，是否要强行找一个最近的
 {
-	static Tuple_Node tmp,tmpp;tmp.nd=tmpp.nd=EMPTY_node;
+		#ifdef debug_cl
+			puts("click!");
+			if(bad_choose)puts("strong!");
+		#endif
+	static Tuple_Node tmp,tmpp;
+	tmp.nd=tmpp.nd=EMPTY_node;
 	static set<Tuple_Node>::iterator tmpn;
 	static int frog=0;
+	static Node *p;
+	ll min_distance=0x7fffffffffffffff;
 	
 	tmp.x=c2bx(msg.y);//获取鼠标位置
 	tmp.y=c2by(msg.x);
 	
 	
-	for(int k=1;k<=15;k++)//在周围一圈找node，曼哈顿距离由小到大搜索
+	for(int k=0;k<=17;k++)//在周围一圈找node，曼哈顿距离由小到大搜索
 	{
 		for(int i=-k;i<=k;i++)
 		{
@@ -592,17 +600,79 @@ inline int click(mouse_msg msg)//鼠标单击左键，选择该处的点
 				{
 					tmp=*tmpn;
 					if(!tmp.nd->is_isolated())
-					i=j=k=1000;//退出循环
+						i=j=k=1000;//退出循环
 				}
 			}
 		}
 	}
 	
-	if(tmpn!=node_xy2id.end())//找到了
+	if(tmpn==node_xy2id.end()||!tmp.nd->is_in_way())//没找到或者在建筑上
 	{
-		cnt_path=0;//清空当前最短路径
-		tmp=*tmpn;
+		Node *Tmp=tmp.nd;
+		int flag=(tmpn==node_xy2id.end());
+		if(!bad_choose&&flag)
+		{
+			puts("附近没有可选点，请重新选点，或按ctrl+左键来强行选择该处点。");
+			return 0;
+		}	puts("1");
+		
+		if(flag)
+		{
+			//创建一个新点
+			cnt_node_storage++;
+			Node nd;
+			nd.init();
+			nd.id=-cnt_node_storage;
+			nd.x=tmp.x;
+			nd.y=tmp.y;
+			nd.lat=(dbl)(nd.x/epsx-dx)*maxlatlon/height_map_bw+(dbl)minlat-maxlatlon/2+dlat/2;
+			nd.lon=(dbl)(nd.y/epsy-dy)*maxlatlon/width_map_bw+(dbl)minlon-maxlatlon/2+dlon/2;
+			nd.version=-1;
+			node_storage[cnt_node_storage]=nd;
+		}
+		
+		for(int k=0;k<=10000;k++)//在周围一圈扩大范围继续找node，曼哈顿距离由小到大搜索
+		{
+			for(int i=-k;i<=k;i++)
+			{
+				for(int j=abs(i)-k;j<=k-abs(i);j++)
+				{
+					tmpp.x=tmp.x+i;
+					tmpp.y=tmp.y+j;
+					tmpn=node_xy2id.find(tmpp);
+					
+					if(tmpn!=node_xy2id.end())//找到了
+					{
+						tmp=*tmpn;
+						if(tmp.nd->is_in_way())
+							i=j=k=10000000;//退出循环
+					}
+				}
+			}
+		}
+			puts("2");
+			if(tmpn==node_xy2id.end())puts("Fail!!");
+			else printf("new %lld\n",tmp.nd->id);
+		
+		if(flag)
+		{
+			add_edge(&node_storage[cnt_node_storage], tmp.nd, way.begin());
+			tmp.nd=&node_storage[cnt_node_storage];
+		}
+		if(!flag)
+		{
+			add_edge(Tmp, tmp.nd, way.begin());
+										printf("area %lld ",tmp.nd->id);
+			tmp.nd=Tmp;
+		}
+	}
+	else 
+	{
+		puts("选中点的信息：");
 		tmp.nd->print();
+	}
+	
+		cnt_path=0;//清空当前最短路径
 		frog=1;
 		for(int i=0;i<=1;i++)
 		{
@@ -615,14 +685,13 @@ inline int click(mouse_msg msg)//鼠标单击左键，选择该处的点
 			path_cnt^=1,
 			path_endpoint[path_cnt]=tmp.nd;
 			
-		return 1;//需要重新渲染
-	}
+	return 1;//需要重新渲染
 	
-	else
+/*	else
 	{
 		cout<<"附近没有可选点"<<endl;
 	}
-	return 0;
+	return 0;*/
 }
 
 #define debug_co 
@@ -689,11 +758,11 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 				if(cnt<=1)//如果鼠标按下左键后动了 或者 一秒后才抬起，那么就不要判定为单击
 				{
 					clear=!cnt_path;
-					if(click(msg))
+					if(click(msg,iscontrol))
 					{
-						clear^=!cnt_path;
 						ui1();
 					}
+					clear^=!cnt_path;
 				}
 					#ifdef debug_co
 //					else
@@ -744,15 +813,13 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 			//for(int i=0;i<=2;i++)key=getkey();//按任何键都会连续发送3条相同的消息，因此提前消掉
 			key=getkey();
 			
-			if(key.msg!=key_msg_down)continue;//只取按下按键时发送的消息
-			
-			if(key.key==key_esc)//esc，退出
+			if(key.key==key_esc && key.msg==key_msg_down)//esc，退出
 			{
 				isbreak=1;
 				return 1;
 			}
 			
-			if(0x25<=key.key && key.key<=0x28)//左上右下，移动地图
+			if(0x25<=key.key && key.key<=0x28 && key.msg==key_msg_down)//左上右下，移动地图
 			{
 				if(move(fx[(key.key-0x25)*2+1],fy[(key.key-0x25)*2+1]))
 					ui1();
@@ -761,17 +828,24 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 					#endif
 			}
 			
-			if(key.key==key_enter)//enter，计算最短路径
+			if(key.key==key_enter && key.msg==key_msg_down)//enter，计算最短路径
 			{
 				if(shortest_path())
 					ui1();
 			}
 			
-			if(key.key==key_space)//空格，显示文字
+			if(key.key==key_space && key.msg==key_msg_down)//空格，显示文字
 			{
 				display_text^=1;
 				ui1();
 			}
+			
+			if(key.key==key_control && key.msg==key_msg_down)//按下/松开control
+			{
+				iscontrol^=1;
+				ui1();
+			}
+			
 			
 			if(clear)//清空控制台
 			{

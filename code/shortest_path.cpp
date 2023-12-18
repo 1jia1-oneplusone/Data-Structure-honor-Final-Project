@@ -182,6 +182,12 @@ inline void build_graph()//建立图
 //#define debug_sh_pa 
 inline int shortest_path()//查询2点间最短路,a*单向搜索
 {
+	Tuple_Node tmp,tmpp;
+	tmp.nd=tmpp.nd=EMPTY_node;
+	set<Tuple_Node>::iterator tmpn;
+	int frog=0;
+	
+	
 	priority_queue<sp_>q;
 	Node *x,*y,*v,*ans,*ans2;
 	sp_ sp;
@@ -252,7 +258,7 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 			puts("");
 		#endif
 	
-	printf("两点间最短路径长度为：%lldm\n",dis[x]);
+	printf("两点间最短路径长度为：%lf公里\n",dis[x]/1000.0);
 	
 	return 1;
 }

@@ -53,6 +53,7 @@ struct Edge;//有向边
 
 TiXmlElement *root;
 Node *EMPTY_node;//不可能自然生成的node
+Node *node_storage;//所有Node的原始储存位置，之后所有地方传递node都通过传递指向该数组的指针实现
 map<ll,Node *>node;//存储所有Node，可以根据node[x]找到id=x的node
 vector<Node *>node_v;//存储所有Node，按id排序。因为是vector，遍历起来比map快。
 set<Node *>cross;//所有道路交叉点(定义：在>=2个way中出现过)
@@ -64,11 +65,16 @@ vector<Relation>relation;//存储所有的relation，按id排序
 vector<Tuple_Way>way_xy2id;//(x1,y1,x2,y2) to *way，根据黑白地图坐标找way的指针
 vector<Tuple_Way>area_xy2id;//(x1,y1,x2,y2) to *area，根据黑白地图坐标找area的指针
 set<string>tag_choice;//对应的tagv是yes或no的tagk
+vector<vector<Node*> >block_node;//分块，存点的指针
+vector<vector<int> >block_way;//分块，存way的指针
+vector<vector<int> >block_area;//分块，存area的指针
+
 
 int load_map=0;//要读取的地图，默认为第一张
 dbl minlat,minlon,maxlat,maxlon,dlat,dlon,minlatlon,maxlatlon;
 int up_map_bw=height_map_bw , right_map_bw=width_map_bw , down_map_bw=0 , left_map_bw=0;//黑白地图真实范围
-int cnt_node_storage;
+int cnt_node_storage,cnt_node=0;
+int block_size;//分块的大小
 int map_bw[height_map_bw][width_map_bw];//黑白地图
 dbl draw_minlat,draw_minlon,draw_maxlat,draw_maxlon;//黑白地图上的经纬度范围
 int cnt_valid_node,cnt_valid_way,cnt_valid_area;//显示在地图上的数目
@@ -76,6 +82,7 @@ int move_tm=1,move_dx=0,move_dy=0;//彩色地图框的放大倍数序号 和 移
 int display_text=0;//是否显示文字
 int display_ocean=0;//是否绘制海洋
 int display_bus=0;//是否绘制公交线路
+int iscontrol;
 PIMAGE whole_map;//全地图
 bool isbreak=0;//是否退出程序
 Node *path_endpoint[2];//要查询最短路的路径的端点
