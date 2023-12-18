@@ -182,10 +182,58 @@ inline void build_graph()//建立图
 //#define debug_sh_pa 
 inline int shortest_path()//查询2点间最短路,a*单向搜索
 {
-	Tuple_Node tmp,tmpp;
-	tmp.nd=tmpp.nd=EMPTY_node;
-	set<Tuple_Node>::iterator tmpn;
-	int frog=0;
+	if(path_endpoint[0]==EMPTY_node || path_endpoint[1]==EMPTY_node)//没有选中2个点
+	{
+		puts("× 请在查询路径前选择2个点。确保地图上有2个靶子图案（不要求显示在屏幕中）。");
+		return 0;
+	}
+	
+	for(int i=0;i<=1;i++)//看看2个端点是不是原图不存在的点或者不在way上
+	{
+		if(path_endpoint[i]->version!=-1 && path_endpoint[i]->is_in_way())continue;
+		
+		Tuple_Node tmp,tmpp;
+		tmp.nd=tmpp.nd=EMPTY_node;
+		set<Tuple_Node>::iterator tmpn;
+		
+		int flag=(path_endpoint[i]->version==-1);
+		
+		tmp.x=path_endpoint[i]->x;
+		tmp.y=path_endpoint[i]->y;
+			
+		for(int k=0;k<=10000;k++)//在周围一圈扩大范围继续找node，曼哈顿距离由小到大搜索
+		{
+			for(int i=-k;i<=k;i++)
+			{
+				for(int j=abs(i)-k;j<=k-abs(i);j++)
+				{
+					tmpp.x=tmp.x+i;
+					tmpp.y=tmp.y+j;
+					tmpn=node_xy2id.find(tmpp);
+					
+					if(tmpn!=node_xy2id.end())//找到了
+					{
+						tmp=*tmpn;
+						if(tmp.nd->is_in_way())
+							i=j=k=10000000;//退出循环
+					}
+				}
+			}
+		}
+		
+		if(flag)
+		{
+			add_edge(path_endpoint[i], tmp.nd, way.begin());
+			path_endpoint[i]->version=0;
+		}
+		else
+		{
+			add_edge(path_endpoint[i], tmp.nd, way.begin());
+		}
+		
+		cnt_node_storage+=2;
+		
+	}
 	
 	
 	priority_queue<sp_>q;
@@ -197,12 +245,6 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 	map<Node*,ll>dis;//记录每个点离出发点的最短距离
 	int ok=0;
 	cnt_path=0;
-	
-	if(path_endpoint[0]==EMPTY_node || path_endpoint[1]==EMPTY_node)//没有选中2个点
-	{
-		puts("× 请在查询路径前选择2个点。确保地图上有2个靶子图案（不要求显示在屏幕中）。");
-		return 0;
-	}
 	
 	//初始化
 	q.push((sp_){0LL,EMPTY_node,path_endpoint[0],0}),

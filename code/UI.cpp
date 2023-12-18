@@ -568,7 +568,7 @@ inline int move(int x,int y)//方向键改变地图位置，以坐标形式输�
 	return move_dx-x!=move_dx||move_dy-y!=move_dy;//如果和一开始的dxdy一样，就不要再渲染了
 }
 
-#define debug_cl 
+//#define debug_cl 
 inline int click(mouse_msg msg,int bad_choose=0)//鼠标单击左键，选择该处的点。bad_choose:如果选的点不在node中，是否要强行找一个最近的
 {
 		#ifdef debug_cl
@@ -606,65 +606,27 @@ inline int click(mouse_msg msg,int bad_choose=0)//鼠标单击左键，选择该
 		}
 	}
 	
-	if(tmpn==node_xy2id.end()||!tmp.nd->is_in_way())//没找到或者在建筑上
+	if(tmpn==node_xy2id.end())//没找到或者在建筑上
 	{
 		Node *Tmp=tmp.nd;
-		int flag=(tmpn==node_xy2id.end());
-		if(!bad_choose&&flag)
+		if(!bad_choose)
 		{
 			puts("附近没有可选点，请重新选点，或按ctrl+左键来强行选择该处点。");
 			return 0;
-		}	puts("1");
-		
-		if(flag)
-		{
-			//创建一个新点
-			cnt_node_storage++;
-			Node nd;
-			nd.init();
-			nd.id=-cnt_node_storage;
-			nd.x=tmp.x;
-			nd.y=tmp.y;
-			nd.lat=(dbl)(nd.x/epsx-dx)*maxlatlon/height_map_bw+(dbl)minlat-maxlatlon/2+dlat/2;
-			nd.lon=(dbl)(nd.y/epsy-dy)*maxlatlon/width_map_bw+(dbl)minlon-maxlatlon/2+dlon/2;
-			nd.version=-1;
-			node_storage[cnt_node_storage]=nd;
 		}
 		
-		for(int k=0;k<=10000;k++)//在周围一圈扩大范围继续找node，曼哈顿距离由小到大搜索
-		{
-			for(int i=-k;i<=k;i++)
-			{
-				for(int j=abs(i)-k;j<=k-abs(i);j++)
-				{
-					tmpp.x=tmp.x+i;
-					tmpp.y=tmp.y+j;
-					tmpn=node_xy2id.find(tmpp);
-					
-					if(tmpn!=node_xy2id.end())//找到了
-					{
-						tmp=*tmpn;
-						if(tmp.nd->is_in_way())
-							i=j=k=10000000;//退出循环
-					}
-				}
-			}
-		}
-			puts("2");
-			if(tmpn==node_xy2id.end())puts("Fail!!");
-			else printf("new %lld\n",tmp.nd->id);
+		//创建一个新点
+		Node nd;
+		nd.init();
+		nd.id=-cnt_node_storage;
+		nd.x=tmp.x;
+		nd.y=tmp.y;
+		nd.lat=(dbl)(nd.x/epsx-dx)*maxlatlon/height_map_bw+(dbl)minlat-maxlatlon/2+dlat/2;
+		nd.lon=(dbl)(nd.y/epsy-dy)*maxlatlon/width_map_bw+(dbl)minlon-maxlatlon/2+dlon/2;
+		nd.version=-1;
+		node_storage[cnt_node_storage+cnt_path+1]=nd;
+		tmp.nd=&node_storage[cnt_node_storage+cnt_path+1];
 		
-		if(flag)
-		{
-			add_edge(&node_storage[cnt_node_storage], tmp.nd, way.begin());
-			tmp.nd=&node_storage[cnt_node_storage];
-		}
-		if(!flag)
-		{
-			add_edge(Tmp, tmp.nd, way.begin());
-										printf("area %lld ",tmp.nd->id);
-			tmp.nd=Tmp;
-		}
 	}
 	else 
 	{
