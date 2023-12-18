@@ -4,10 +4,10 @@
 //#include "common.cpp"
 #define hide 
 
-//inline const bool operator <(const Node *x,const Node *y);//重载<运算符，以便存放在set中
-//inline const bool operator ==(const Node *x,const Node *y);//重载=运算符，以便调用set中的find函数
+//inline const bool operator <(const Node *x,const Node *y);//重载<运算符，以便排序
+//inline const bool operator ==(const Node *x,const Node *y);//重载=运算符，以便二分查找
 inline const bool operator <(const set<Node>::iterator &x,const set<Node>::iterator &y);//重载<运算符，以便存放在set中
-inline const bool operator <(const Way &x,const Way &y);//重载<运算符，以便存放在set中
+inline const bool operator <(const Way &x,const Way &y);//重载<运算符，以便排序
 //inline const bool operator ==(const Way &x,const Way &y);//重载==运算符，以便调用set中的find函数
 inline const char *what_type(const char *c);//看某个属性是什么类型
 inline void get_ret(const char *c,string &s);
@@ -164,7 +164,7 @@ struct Node{
 	
 		
 }*node_storage;//所有Node的原始储存位置，之后所有地方传递node都通过传递指向该数组的指针实现
-inline const bool operator <(const Node x,const Node y)//重载<运算符，以便存放在set中
+inline const bool operator <(const Node x,const Node y)//重载<运算符，以便排序
 {
 	return x.id < y.id;
 }
@@ -460,10 +460,14 @@ struct Relation{
 					tmpp=lower_bound(area.begin(),area.end(),tmpp2);
 					if(tmpp==area.end())continue;//不存在
 					mw_isarea.push_back(1);
+					myway.push_back(tmpp-area.begin());
 				}
-				else mw_isarea.push_back(0);
+				else 
+				{
+					mw_isarea.push_back(0);
+					myway.push_back(tmpp-way.begin());
+				}
 				
-				myway.push_back(tmpp-way.begin());
 				mw_role.push_back(role);
 				
 				tmpp2=*tmpp;
@@ -524,7 +528,7 @@ struct Relation{
 				\n#  timestamp:\t ",id,changeset,uid,version,visible,cnt_member);
 		cout<<timestamp;
 		puts("\t\t#");
-//		if(cnt_member<=5)for(int i=0;i<cnt_member;i++)printf("%lld ",(*mynode[i]).id);
+		for(int i=0;i<cnt_tag;i++)printf("%s",tagv[i]);
 		puts("\n#################################################\n");
 		return;
 	}
@@ -628,28 +632,21 @@ template<class T>inline void get_attribute(TiXmlElement *nd,const char* att,T &o
 	return;
 }
 
-
+//#define debug_ge_ma 
 inline void get_maxmin()//得到整个文件的最大最小经纬度
 {
 	TiXmlElement *nd = root->FirstChildElement("bounds");
-		#ifdef debug
-			puts("Success: Get bound");
-		#endif
 	get_attribute(nd,"minlat",minlat);
-		#ifdef debug
-			puts("Success: Get minlat");
-		#endif
 	get_attribute(nd,"maxlat",maxlat);
 	get_attribute(nd,"minlon",minlon);
 	get_attribute(nd,"maxlon",maxlon);
+		#ifdef debug_ge_ma
+			minlat+=0.05;maxlat+=0.03;
+			minlon+=0.15;maxlon+=0.03;
+		#endif
 	dlat=maxlat-minlat,dlon=maxlon-minlon;
 	minlatlon=min(dlat,dlon);
 	maxlatlon=max(dlat,dlon);
-	
-/*	left_map_bw+=width_map_bw*(maxlatlon-dlon)/maxlatlon/2;
-	right_map_bw*=(maxlatlon+dlon)/maxlatlon/2;
-	down_map_bw+=height_map_bw*(maxlatlon-dlat)/maxlatlon/2;
-	up_map_bw*=(maxlatlon+dlat)/maxlatlon/2;*/
 	
 	return;
 }
@@ -664,8 +661,8 @@ inline void get_all_node()//在set类型node中储存所有点
 {
 	//分配空间
 	TiXmlElement *nd = root->FirstChildElement("node");
-	for(cnt_node_storage=1; nd; nd=nd->NextSiblingElement("node"), cnt_node_storage++);
-	node_storage=(Node *)malloc(sizeof(Node)*cnt_node_storage);
+	for(cnt_node_storage=0; nd; nd=nd->NextSiblingElement("node"), cnt_node_storage++);
+	node_storage=(Node *)malloc(sizeof(Node)*(cnt_node_storage+1));
 	
 	nd = root->FirstChildElement("node");
 	EMPTY_node=node_storage;//创造空节点
@@ -708,6 +705,9 @@ inline void get_all_way()//在vector类型way / area中储存所有点
 		ban=0;
 		for(int i=0;ban_user[i]!=EMPTY_number;i++)//检查该用户是否被ban
 			if(tmp->uid==ban_user[i])
+				ban=1;
+		for(int i=0;ban_way[i]!=EMPTY_number;i++)//检查该路线是否被ban
+			if(tmp->id==ban_way[i])
 				ban=1;
 		if(ban)continue;
 		

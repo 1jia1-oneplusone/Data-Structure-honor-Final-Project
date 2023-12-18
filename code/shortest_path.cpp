@@ -179,7 +179,7 @@ inline void build_graph()//建立图
 	return 1;
 }*/
 
-#define debug_sh_pa 
+//#define debug_sh_pa 
 inline int shortest_path()//查询2点间最短路,a*单向搜索
 {
 	priority_queue<sp_>q;
@@ -235,7 +235,7 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 	
 	if(!ok)//没找到
 	{
-		puts("两点间没有相连路径或者相距太远，请选择其它点进行查询。");
+		puts("两点间在地图中没有相连路径或者相距太远，请选择其它点进行查询。");
 		if(path_endpoint[0]->is_at_area() || path_endpoint[1]->is_at_area())
 			puts("请注意不要误选到建筑上的点，因为你没法沿着建筑外墙行走。");
 		return 0;

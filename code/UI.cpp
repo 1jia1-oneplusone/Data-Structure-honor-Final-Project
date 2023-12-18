@@ -1,33 +1,30 @@
-inline void ui_line(int x1,int y1,int x2,int y2,int col,int thickness);//用ege画线
-inline void ui_natural(Way wy);//画自然景观（tagk="natural"）
-inline void get_island(Node *a,Node *b);//从给定2点开始寻找并绘制岛屿（封闭曲线），类似凸包算法
-inline void island();
-inline void ui_area(Way wy,int coll);//画area,coll表示需不需要调整画笔
-inline void ui_way(Way wy,int cnt,int coll);//画way,coll表示需不需要调整画笔
-inline void ui1();//绘制界面
-inline void fix_mdxy();//修正move_dx和move_dy，不至于超出地图范围
-inline int roll(mouse_msg msg);//滚轮调整地图大小，返回1/0 是否有实际调整地图大小
-inline int drag(int &x1,int &y1,int x2,int y2);//鼠标左键拖动地图位置，返回1/0 是否有实际拖动地图位置
-inline int move(int x,int y);//方向键改变地图位置，以坐标形式输入。返回1/0 是否有实际改变地图位置
-inline int control();//处理全部鼠标信息 返回0：啥也不干 返回1：退出程序
-inline void judge_ocean();//判断是否绘制海洋
-inline void main_ui();
-inline void ui_initialize();
-inline void choose();//选择要加载的地图
 
+inline void ui_bar()//窗口栏绘制
+{
+	color_t fc=getfillcolor(),c=getcolor();
+	
+	setfillcolor(EGERGB(208,220,232));
+	setcolor(EGERGB(198,207,216));
+	setlinewidth(2);
+	
+	bar(0,height_map_col,width_map_col,height_map_col+window_bar);
+	line(0,height_map_col,width_map_col,height_map_col);
+	
+	setfillcolor(fc);setcolor(c);
+}
 
-inline void ui_line(int x1,int y1,int x2,int y2,int col=-1,int thickness=-1)//用ege画线
+inline void ui_line(int x1,int y1,int x2,int y2,PIMAGE pic=NULL,int col=-1,int thickness=-1)//用ege画线
 {
 	if(thickness>=0)
 		setlinewidth(thickness);
 	if(col>=0)
 		setcolor(EGEARGB(0xFF, col>>16, col>>8, col));
-	line(b2cxy(x1,y1), b2cxy(x2,y2));
+	line(b2cxy(x1,y1), b2cxy(x2,y2),pic);
 	return;
 }
 
 //wood stone beach bare_rock coastline water
-inline void ui_natural(Way wy)//画自然景观（tagk="natural"）
+inline void ui_natural(Way wy,PIMAGE pic=NULL)//画自然景观（tagk="natural"）
 {
 	static int frog=0;
 	static Node *a;
@@ -48,7 +45,7 @@ inline void ui_natural(Way wy)//画自然景观（tagk="natural"）
 	}
 	if(frog)//一个地图区域只要有一个点在地图范围内，就要整个都画，否则填充会出问题。
 	{
-		ege_fillpoly(wy.cnt_node,tmp);//画一团多边形色块
+		ege_fillpoly(wy.cnt_node,tmp,pic);//画一团多边形色块
 	}
 	
 	setfillcolor(EGEARGB(0xFF, 233,240,245));
@@ -56,10 +53,10 @@ inline void ui_natural(Way wy)//画自然景观（tagk="natural"）
 }
 
 //#define debug_ge_is 
-inline void get_island(Node *a,Node *b)//从给定2点开始寻找并绘制岛屿（封闭曲线），类似凸包算法
+inline void get_island(Node *a,Node *b,PIMAGE pic=NULL)//从给定2点开始寻找并绘制岛屿（封闭曲线），类似凸包算法
 {
 	Node *beg=a,*v,*choose;
-	ege_point tmp[20000];
+	ege_point tmp[200000];
 	int cnt=0;
 	dbl max_angle,tmp2,last_angle;
 	Way tmpp;
@@ -81,8 +78,8 @@ inline void get_island(Node *a,Node *b)//从给定2点开始寻找并绘制岛�
 		{
 			v=b->edge[i].to;
 			tmpp=*(b->edge[i].belong);
-			if(v==a && b->cnt_edge>1 || tmpp["route"]=="ferry")
-				continue;//(1)一般不会再访问上一个点，除非这个点是死胡同，只能掉头了 (2)不要走航线
+			if(v==a && b->cnt_edge>1 || tmpp["route"]=="ferry" || tmpp["power"]=="line" || tmpp["waterway"]=="river")
+				continue;//(1)一般不会再访问上一个点，除非这个点是死胡同，只能掉头了 (2)不要走航线等特殊路线
 			
 			tmp2=calc_angle(b,a,v);//计算夹角
 			
@@ -100,20 +97,25 @@ inline void get_island(Node *a,Node *b)//从给定2点开始寻找并绘制岛�
 	}
 	
 	setfillcolor(EGEARGB(0xFF, 197,240,211));
-	ege_fillpoly(cnt-1,tmp);
-//	setcolor(EGEARGB(0xFF, 0,0,0));
-//	setlinewidth(4);
-//	ege_drawpoly(cnt-1,tmp);
+	ege_fillpoly(cnt-1,tmp,pic);
+	
+	/*setcolor(BLACK);
+	setlinewidth(6);
+	ege_drawpoly(cnt-1,tmp,pic);*/
 	
 	return;
 }
 
 //#define debug_is 
-inline void island()
+inline void island(PIMAGE pic=NULL)
 {
 	ege_point tmp[20000];
 	int cnt;
-	get_island(node[1763041878],node[1763041608]);//绘制鼓浪屿岛的陆地，这两个点是从岛屿边缘任选的连续2个点
+	get_island(node[1763041878],node[1763041608],pic);//绘制鼓浪屿岛的陆地，这两个点是从岛屿边缘任选的连续2个点
+	get_island(node[2398387661],node[2398387607],pic);//厦门岛
+	get_island(node[4239351927],node[63089182],pic);//大屿岛
+	get_island(node[7077375465],node[7077375425],pic);//海沧岛
+	get_island(node[5789784263],node[7663037403],pic);//漳州岛
 	Way wy;
 	Relation rl;
 	
@@ -149,14 +151,14 @@ inline void island()
 			#endif
 	}
 	setfillcolor(EGEARGB(0xFF, 197,240,211));
-	ege_fillpoly(wy.cnt_node-1,tmp);
+	ege_fillpoly(wy.cnt_node-1,tmp,pic);
 		#ifdef debug_is 
 			puts("ok");
 		#endif
 	return;
 }
 
-inline void ui_way(Way wy,int cnt,int coll=0)//画way,coll表示需不需要调整画笔
+inline void ui_way(Way wy,int cnt,PIMAGE pic=NULL,int coll=0)//画way,coll表示需不需要调整画笔
 {
 	static int col[]={CYAN,DARKGRAY,LIGHTBLUE,MAGENTA,0xFFFFFF};//way显示的颜色
 	
@@ -167,7 +169,7 @@ inline void ui_way(Way wy,int cnt,int coll=0)//画way,coll表示需不需要调�
 		else if(wy["boundary"]=="administrative")//行政区域划分，由于在地图数据中不完整，因此干脆直接不显示
 			return;
 		else if(wy["natural"]=="coastline")//海岸线
-			setlinestyle(SOLID_LINE),setlinewidth(4),setcolor(BLACK);
+			setlinestyle(SOLID_LINE),setlinewidth(2),setcolor(BLACK);
 		else//默认值
 		{
 			setlinestyle(SOLID_LINE);
@@ -183,20 +185,20 @@ inline void ui_way(Way wy,int cnt,int coll=0)//画way,coll表示需不需要调�
 	{
 		a=wy[i];
 		b=wy[i-1];
-		ui_line(a->x,a->y,b->x,b->y);
+		ui_line(a->x,a->y,b->x,b->y,pic);
 	}
 	return;
 }
 
-inline void ui_area(Way wy,int coll=0)//画area,coll表示需不需要调整画笔
+inline void ui_area(Way wy,PIMAGE pic=NULL,int coll=0)//画area,coll表示需不需要调整画笔
 {
 	if(!coll)
 	{
-		if(wy["cly"]=="no") //厦门岛陆地区域，已经单独画过了
+		if(wy["cly"]=="no") //已经单独画过的区域
 			return;
 		else if(wy["natural"]!=EMPTY_string || wy["landuse"]=="grass") //自然景观
 		{
-			ui_natural(wy);
+			ui_natural(wy,pic);
 			return;
 		}
 		else if(wy["landuse"]=="residential") //小区，画了反而会覆盖里面包含的建筑
@@ -222,14 +224,13 @@ inline void ui_area(Way wy,int coll=0)//画area,coll表示需不需要调整画�
 //		if(check(b2cxy(a->x,a->y),1))frog=1;
 		tmp[i]=(ege_point){b2cxy((a->x),(a->y))};
 	}
-//	if(frog)//一个地图区域只要有一个点在地图范围内，就要整个都画，否则填充会出问题。//该做法有问题，如果某个建筑把地图范围包起来，也得画
-	{
-		ege_fillpoly(wy.cnt_node,tmp);//画一团多边形色块
+	
+	ege_fillpoly(wy.cnt_node,tmp,pic);//画一团多边形色块
 		
-		if(wy["building"]!=EMPTY_string || wy["leisure"]!=EMPTY_string || wy["office"]!=EMPTY_string || wy["amenity"]!=EMPTY_string 
-				|| wy["landuse"]=="military" || wy["landuse"]=="construction" || wy["shop"]!=EMPTY_string)//描边
-			ege_drawpoly(wy.cnt_node,tmp);
-	}
+	if(wy["building"]!=EMPTY_string || wy["leisure"]!=EMPTY_string || wy["office"]!=EMPTY_string || wy["amenity"]!=EMPTY_string 
+			|| wy["landuse"]=="military" || wy["landuse"]=="construction" || wy["shop"]!=EMPTY_string)//描边
+		ege_drawpoly(wy.cnt_node,tmp,pic);
+	
 	return;
 }
 
@@ -237,6 +238,7 @@ inline void ui_area(Way wy,int coll=0)//画area,coll表示需不需要调整画�
 //#define debug_ui1_fast 
 inline void ui1()//绘制界面
 {
+	
 	if(display_ocean)
 		setbkcolor(EGERGB(152,209,252));	//设置背景色为浅蓝（海的颜色）
 	else
@@ -328,30 +330,38 @@ inline void ui1()//绘制界面
 	}
 	
 	
-	//绘制relation
-	setlinewidth(2*move_time[move_tm]/move_tm);
-	setcolor(YELLOW);
-	for(int i=0;i<relation.size();i++)
+	//绘制relation的公交线路
+	if(display_bus)
 	{
-		rl=relation[i];
-			frog=0;
-			for(int i=0;i<rl.cnt_tag;i++)
+		setlinewidth(2*move_time[move_tm]/move_tm);
+		setcolor(EGERGB(176,149,105));
+		for(int ii=0;ii<relation.size();ii++)
+		{
+			rl=relation[ii];
+			
+				frog=0;
+				for(int i=0;i<rl.cnt_tag;i++)
+				{
+					if(rl.tagv[i]=="bus")frog=1;
+				}
+				if(!frog)continue;
+				
+				//rl.print();
+				
+			for(int i=0;i<rl.mynode.size();i++)
 			{
-				if(rl.tagv[i]=="bus")frog=1;
+				a=rl.mynode[i];
+				circle(b2cxy(a->x,a->y),10*move_time[move_tm]/(move_tm+1));
 			}
-			if(!frog)continue;
-		for(int i=0;i<rl.mynode.size();i++)
-		{
-			a=rl.mynode[i];
-			circle(b2cxy(a->x,a->y),10*move_time[move_tm]/move_tm);
+			for(int i=0;i<rl.myway.size();i++)
+			{
+				if(rl.mw_isarea[i]==0)
+					ui_way(way[rl.myway[i]],0,NULL,1);
+				else
+					ui_area(area[rl.myway[i]],NULL,1);
+			}
 		}
-		for(int i=0;i<rl.myway.size();i++)
-		{
-			if(rl.mw_isarea[i]==0)
-				ui_way(way[rl.myway[i]],0,1);
-			else
-				ui_area(area[rl.myway[i]],1);
-		}
+		setcolor(BLACK);
 	}
 	
 	
@@ -408,11 +418,11 @@ inline void ui1()//绘制界面
 				if(!wy.isarea)//way的文字与对应的way同色
 					setcolor(EGEARGB(0xFF,col[cnt%4]>>16, col[cnt%4]>>8, col[cnt%4]));
 				
-				if(wy["name"]!=EMPTY_string)
+				/*if(wy["name"]!=EMPTY_string)
 					text=wy["name"].c_str(),
 					font="宋体",
 					font_size=10;
-				else //没有中文名，只好退而求其次显示英文名
+				else //没有中文名，只好退而求其次显示英文名*/
 					text=wy["name:en"].c_str(),
 					font="Calibri",
 					font_size=12;
@@ -485,7 +495,7 @@ inline void ui1()//绘制界面
 		}
 	}
 	
-	
+	ui_bar();//窗口栏
 	
 //	puts("Success: Generate UI.");
 //	getch();
@@ -634,15 +644,10 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 	
 	while(mousemsg() || kbmsg())
 	{
-		
 		redraw=0;
 		notclick=0;
 		
-		
-		lasttime=nowtime,nowtime=chrono::system_clock::now();//更新时间
-		
-		if(cnt2)cnt2+=(nowtime-lasttime).count()/1000000;//计算路径的计时器
-				
+		lasttime=nowtime,nowtime=chrono::system_clock::now();//更新时间				
 		
 		if(mousemsg())
 		{
@@ -709,7 +714,7 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 			
 			else if(msg.is_mid() && msg.is_down())//中键按下，截图
 			{
-				getimage(png,0,0,width_map_col,height_map_col);//获取屏幕图像
+				getimage(png,0,0,width_map_col,height_map_col+window_bar);//获取屏幕图像
 				if(savepng(png, "Screenshot.png"))//输出.png文件，失败返回1
 					puts("保存截图失败");
 				else
@@ -739,6 +744,8 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 			//for(int i=0;i<=2;i++)key=getkey();//按任何键都会连续发送3条相同的消息，因此提前消掉
 			key=getkey();
 			
+			if(key.msg!=key_msg_down)continue;//只取按下按键时发送的消息
+			
 			if(key.key==key_esc)//esc，退出
 			{
 				isbreak=1;
@@ -754,19 +761,17 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 					#endif
 			}
 			
-			if(key.key==key_enter && (cnt2>=5 || cnt2==0))//enter，计算最短路径。增加计数器是因为按下按键后短时间内会发出3条相同的消息。
+			if(key.key==key_enter)//enter，计算最短路径
 			{
-				cnt2=1;
 				if(shortest_path())
 					ui1();
 			}
 			
-			/*if(key.key==key_space)
+			if(key.key==key_space)//空格，显示文字
 			{
 				display_text^=1;
 				ui1();
-				puts("space");
-			}*/
+			}
 			
 			if(clear)//清空控制台
 			{
@@ -795,43 +800,9 @@ inline void judge_ocean()//判断是否绘制海洋
 	return;
 }
 
-inline void main_ui()
-{
-	path_endpoint[0]=path_endpoint[1]=EMPTY_node;
-	path_cnt=0;
-	
-	judge_ocean();
-	
-	ui1();//先画出最初的地图
-	
-	puts("√ 绘制UI");
-	
-	puts("---------------------------");
-	puts("初始化全部完成，在地图上进行任意动作以清除以上消息。");
-	
-	bool opt;
-	
-	while(is_run()&&!isbreak)
-	{
-		opt=control();
-	}
-	
-	return;
-}
-
-inline void ui_initialize()
-{
-	initgraph(width_map_col, height_map_col, INIT_RENDERMANUAL);//创建窗口
-	
-	setrendermode(RENDER_MANUAL);//设置为手动渲染模式，以后绘制完成后，需要使用getche()等等待类函数才会显示新画的东西
-	ege_enable_aa(true);//开启抗锯齿(默认为不开启)	
-	
-	return;
-}
 
 inline void choose_map()//选择要加载的地图
 {
-	
 	setbkcolor(EGERGB(152,209,252));	//设置背景色为浅蓝（海的颜色）
 	setcolor(BLACK);
 	
@@ -841,6 +812,8 @@ inline void choose_map()//选择要加载的地图
 	
 	//left top right bottom depth topflag
 	int bottom[][6]={{65,250,365,400,10,1},{425,250,725,400,10,1},{65,450,365,600,10,1},{425,450,725,600,10,1},{250,650,550,750,10,1},{-1,0,0,0,0,0}};
+	
+	ui_bar();//窗口栏
 	
 	outtextxy(400,150,"请选择你要加载的地图");
 	
@@ -959,6 +932,41 @@ inline void choose_map()//选择要加载的地图
 		}
 		map_list[pick]=ch;
 	}
+	
+	return;
+}
+
+inline void main_ui()
+{
+	path_endpoint[0]=path_endpoint[1]=EMPTY_node;
+	path_cnt=0;
+	
+	judge_ocean();
+	
+	//whole_map=newimage(6400,6400);
+	ui1();//先画出最初的地图
+	
+	puts("√ 绘制UI");
+	
+	puts("---------------------------");
+	puts("初始化全部完成，在地图上进行任意动作以清除以上消息。");
+	
+	bool opt;
+	
+	while(is_run()&&!isbreak)
+	{
+		opt=control();
+	}
+	
+	return;
+}
+
+inline void ui_initialize()
+{
+	initgraph(width_map_col, height_map_col+window_bar, INIT_RENDERMANUAL);//创建窗口
+	
+	setrendermode(RENDER_MANUAL);//设置为手动渲染模式，以后绘制完成后，需要使用getche()等等待类函数才会显示新画的东西
+	ege_enable_aa(true);//开启抗锯齿(默认为不开启)	
 	
 	return;
 }

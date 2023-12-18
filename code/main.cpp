@@ -1,4 +1,4 @@
-	#define hide 
+#define hide 
 #define debug 
 //#define debug_ge_at 
 //#define debug_tr_wa 
@@ -48,6 +48,8 @@ int main()
 	ui_initialize();
 	
 	choose_map();
+	
+	if(isbreak)return 0;
 	
 	Load_map();
 	

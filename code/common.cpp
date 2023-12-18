@@ -30,7 +30,8 @@ const int N=1000000;//一维数组默认大小
 const int M=5000;//地图默认边长
 const ll R=64000000;//地球半径
 const dbl pi=acos(0)*2;//pi
-const ll ban_user[]={6556551,EMPTY_number};//这些个用户上传的路线有误，在读取地图时就不把他们的路线存进来
+const ll ban_user[]={6556551,1817244,EMPTY_number};//这些个用户上传的路线有误，在读取地图时就不把他们的路线存进来
+const ll ban_way[]={474170687,EMPTY_number};//同理↑
 //const int height_map_bw=2161,width_map_bw=7710;//黑白地图大小
 const int height_map_bw=8000,width_map_bw=8000;//黑白地图大小
 const int epsx=1,epsy=1;//地图初始放大倍数
@@ -40,6 +41,7 @@ const int fx[24]={-1,-1,-1,0,1,1,1,0,-2,-2,-2,-2,-2,-1,0,1,2,2,2,2,2,1,0,-1},
 const int height_map_col=800,width_map_col=800;//彩色地图大小
 const int bw2col_h=height_map_bw/height_map_col,bw2col_w=width_map_bw/width_map_col;//黑白地图与彩色地图大小的比值
 const int move_time[]={0,1,2,4,8,16,32,64,0};//放大倍数，要可以在各个地方整除，所以设置固定倍数。前后2个0为哨兵值
+const int window_bar=50;//窗口栏大小
 
 struct Node;
 struct Way;
@@ -73,6 +75,8 @@ int cnt_valid_node,cnt_valid_way,cnt_valid_area;//显示在地图上的数目
 int move_tm=1,move_dx=0,move_dy=0;//彩色地图框的放大倍数序号 和 移动偏移量
 int display_text=0;//是否显示文字
 int display_ocean=0;//是否绘制海洋
+int display_bus=0;//是否绘制公交线路
+PIMAGE whole_map;//全地图
 bool isbreak=0;//是否退出程序
 Node *path_endpoint[2];//要查询最短路的路径的端点
 int path_cnt;//记录2个路径端点选择的先后顺序
