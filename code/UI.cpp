@@ -1,16 +1,54 @@
 
-inline void ui_bar()//窗口栏绘制
+inline void ui_bar(PIMAGE pic=NULL)//窗口栏绘制
 {
-	color_t fc=getfillcolor(),c=getcolor();
+	color_t fc=getfillcolor(pic),c=getcolor(pic);
 	
-	setfillcolor(EGERGB(208,220,232));
-	setcolor(EGERGB(198,207,216));
-	setlinewidth(2);
+	setfillcolor(EGERGB(208,220,232),pic);
+	setcolor(EGERGB(198,207,216),pic);
+	setlinewidth(2,pic);
+	bar(0,height_map_col,width_map_col,height_map_col+window_bar,pic);
+	line(0,height_map_col,width_map_col,height_map_col,pic);
 	
-	bar(0,height_map_col,width_map_col,height_map_col+window_bar);
-	line(0,height_map_col,width_map_col,height_map_col);
 	
-	setfillcolor(fc);setcolor(c);
+	setfont(20, 0, "宋体", 0, 0, FW_BOLD, 0, 0, 0);
+	if(!iscontrol)
+	{
+		setcolor(LIGHTGRAY,pic);
+		outtextxy(width_map_col*0.85,height_map_col+window_bar*0.5,"未开启强行选点模式",pic);
+	}
+	else
+	{
+		setcolor(GREEN,pic);
+		outtextxy(width_map_col*0.85,height_map_col+window_bar*0.5,"已开启强行选点模式",pic);
+	}
+	
+	setcolor(BLACK,pic);
+	outtextxy(width_map_col*0.6,height_map_col+window_bar*0.5,"高亮公交线路",pic);
+	if(!display_bus)
+		setfillcolor(LIGHTGRAY,pic);
+	else
+		setfillcolor(GREEN,pic);
+	bar3d(width_map_col*0.68,height_map_col+window_bar*0.30,width_map_col*0.705,height_map_col+window_bar*0.70,0,0);
+	
+	
+	setfillcolor(fc,pic);setcolor(c,pic);
+}
+
+inline int bar_click(mouse_msg msg,PIMAGE pic=NULL)//点击窗口栏
+{
+	int x=msg.x,y=msg.y;
+	if(x>width_map_col*0.72)//点击强行选点模式
+	{
+		iscontrol^=1;
+		ui_bar(pic);
+		return 0;
+	}
+	if(x>=width_map_col*0.68 && y>=height_map_col+window_bar*0.30 && x<=width_map_col*0.705 && y<=height_map_col+window_bar*0.70)
+	{
+		display_bus^=1;
+		ui_bar(pic);
+		return 1;
+	}
 }
 
 inline void ui_line(int x1,int y1,int x2,int y2,PIMAGE pic=NULL,int col=-1,int thickness=-1)//用ege画线
@@ -160,7 +198,7 @@ inline void island(PIMAGE pic=NULL)
 
 inline void ui_way(Way wy,int cnt,PIMAGE pic=NULL,int coll=0)//画way,coll表示需不需要调整画笔
 {
-	static int col[]={CYAN,DARKGRAY,LIGHTBLUE,MAGENTA,0xFFFFFF};//way显示的颜色
+	static int col[]={DARKGRAY,LIGHTBLUE,MAGENTA,0xFFFFFF};//way显示的颜色
 	
 	if(!coll)
 	{
@@ -174,7 +212,7 @@ inline void ui_way(Way wy,int cnt,PIMAGE pic=NULL,int coll=0)//画way,coll表示
 		{
 			setlinestyle(SOLID_LINE);
 			setlinewidth(2-(move_tm==1));
-			setcolor(EGEARGB(0xFF,col[cnt%4]>>16, col[cnt%4]>>8, col[cnt%4]));
+			setcolor(EGEARGB(0xFF,col[cnt%3]>>16, col[cnt%3]>>8, col[cnt%3]));
 		}
 	}
 	
@@ -186,6 +224,13 @@ inline void ui_way(Way wy,int cnt,PIMAGE pic=NULL,int coll=0)//画way,coll表示
 		a=wy[i];
 		b=wy[i-1];
 		ui_line(a->x,a->y,b->x,b->y,pic);
+	}
+	
+	if(!coll)
+	{
+		setlinestyle(SOLID_LINE);
+		setlinewidth(2-(move_tm==1));
+		setcolor(EGEARGB(0xFF,col[cnt%4]>>16, col[cnt%4]>>8, col[cnt%4]));
 	}
 	return;
 }
@@ -293,7 +338,6 @@ inline void ui1()//绘制界面
 			printf("%d",find.x1);
 		#endif
 	
-	
 	for(auto x=lower_bound(area_xy2id.begin(),area_xy2id.end(),find); x!=way_xy2id.end() ; x++,cnt++)//绘制所有way和area，用一点点优化
 	{
 		if(x==area_xy2id.end())//area遍历完了就切换到way
@@ -333,20 +377,20 @@ inline void ui1()//绘制界面
 	//绘制relation的公交线路
 	if(display_bus)
 	{
-		setlinewidth(2*move_time[move_tm]/move_tm);
+		setlinewidth(3*move_time[move_tm]/move_tm);
 		setcolor(EGERGB(176,149,105));
 		for(int ii=0;ii<relation.size();ii++)
 		{
 			rl=relation[ii];
 			
-				frog=0;
-				for(int i=0;i<rl.cnt_tag;i++)
-				{
-					if(rl.tagv[i]=="bus")frog=1;
-				}
-				if(!frog)continue;
-				
-				//rl.print();
+			frog=0;
+			for(int i=0;i<rl.cnt_tag;i++)
+			{
+				if(rl.tagv[i]=="bus")frog=1;
+			}
+			if(!frog)continue;
+			
+			//rl.print();
 				
 			for(int i=0;i<rl.mynode.size();i++)
 			{
@@ -410,7 +454,11 @@ inline void ui1()//绘制界面
 			}
 			wy=*((*x).wy);
 			
-			if(wy["name"]!=EMPTY_string||wy["name:en"]!=EMPTY_string)
+//#define debug_ui11 
+					#ifdef debug_ui11
+						printf(" %lld ",wy.id);
+					#endif
+			if(/*wy["name"]!=EMPTY_string||*/wy["name:en"]!=EMPTY_string)
 			{
 				settextjustify(CENTER_TEXT, CENTER_TEXT);
 				setbkmode(TRANSPARENT);//文字背景透明
@@ -427,9 +475,8 @@ inline void ui1()//绘制界面
 					font="Calibri",
 					font_size=12;
 
-//#define debug_ui11 
 					#ifdef debug_ui11
-						cout<<'^'<<wy["name"];
+						cout<<'^'<<wy["name:en"];
 						printf("%s ",text);
 					#endif
 				
@@ -438,16 +485,23 @@ inline void ui1()//绘制界面
 				if(wy.isarea) xyprintf( b2cxy(wy.avgx, wy.avgy), "%s", text);//area就输出在中心
 				else xyprintf( b2cxy(wy.midx, wy.midy), "%s", text);//way就输出在中点
 			}
+					#ifdef debug_ui11
+						printf(" %lld ",wy.id);
+					#endif
 		}
+			#ifdef debug_ui11
+				printf("finished 1!\n");
+			#endif
 		
 		
 		cnt=0;
 		for(auto x=node_v.begin() ; x!=node_v.end() ; x++,cnt++)//遍历点
 		{
-			if(!check(a->x,a->y))//超出地图边界，就不画了
+//	#define debug_ui12 
+			nd=*((*x));
+			if(!check(nd.x,nd.y))//超出地图边界，就不画了
 				continue;
 			
-			nd=*((*x));
 			
 				#ifdef debug_ui1 //这里的调试用来输出地图上特定点的id，以此来在地图文件中找到每一个特殊note/way的真实身份
 					//设置文字样式，输出文字
@@ -466,12 +520,12 @@ inline void ui1()//绘制界面
 					}*/
 				#endif
 			
-			if(a->is_isolated())//孤立点一般有很多tag
+			if(nd.is_isolated())//孤立点一般有很多tag
 			{
 				//do something
 			}
 			
-			if(nd["name"]!=EMPTY_string||nd["name:en"]!=EMPTY_string)
+			if(/*nd["name"]!=EMPTY_string||*/nd["name:en"]!=EMPTY_string)
 			{
 				settextjustify(CENTER_TEXT, CENTER_TEXT);
 				setbkmode(TRANSPARENT);//文字背景透明
@@ -479,20 +533,23 @@ inline void ui1()//绘制界面
 				if(!wy.isarea)//与对应的way同色
 					setcolor(EGEARGB(0xFF,col[cnt%4]>>16, col[cnt%4]>>8, col[cnt%4]));
 				
-				if(nd["name"]!=EMPTY_string)
+				/*if(nd["name"]!=EMPTY_string)
 					text=nd["name"].c_str(),
 					font="宋体",
 					font_size=10;
-				else //没有中文名，只好退而求其次显示英文名
+				else //没有中文名，只好退而求其次显示英文名*/
 					text=nd["name:en"].c_str(),
 					font="Calibri",
 					font_size=12;
-				
+									
 				setfont(font_size*move_time[move_tm]/move_tm, 0, font, 0, 0, FW_BOLD, 0, 0, 0);
 				
 				xyprintf( b2cxy(nd.x, nd.y), "%s", text);
 			}
 		}
+			#ifdef debug_ui12
+				printf("finished 2!\n");
+			#endif
 	}
 	
 	ui_bar();//窗口栏
@@ -611,11 +668,12 @@ inline int click(mouse_msg msg,int bad_choose=0)//鼠标单击左键，选择该
 		Node *Tmp=tmp.nd;
 		if(!bad_choose)
 		{
-			puts("附近没有可选点，请重新选点，或按ctrl+左键来强行选择该处点。");
+			puts("附近没有可选点，请重新选点，或按ctrl切换成强行选点模式。");
 			return 0;
 		}
 		
 		//创建一个新点
+		cnt_node_storage=cnt_node+(cnt_node_storage-cnt_node+1)%10000;
 		Node nd;
 		nd.init();
 		nd.id=-cnt_node_storage;
@@ -634,19 +692,19 @@ inline int click(mouse_msg msg,int bad_choose=0)//鼠标单击左键，选择该
 		tmp.nd->print();
 	}
 	
-		cnt_path=0;//清空当前最短路径
-		frog=1;
-		for(int i=0;i<=1;i++)
-		{
-			if(path_endpoint[i]==tmp.nd)//如果重复选择一个node，就取消它，并且不影响另一个选择的node
-				path_endpoint[i]=EMPTY_node,
-				path_cnt=i^1,
-				frog=0;
-		}
-		if(frog)//否则就把它记录下来，且覆盖掉最开始选的点
-			path_cnt^=1,
-			path_endpoint[path_cnt]=tmp.nd;
-			
+	cnt_path=0;//清空当前最短路径
+	frog=1;
+	for(int i=0;i<=1;i++)
+	{
+		if(path_endpoint[i]==tmp.nd)//如果重复选择一个node，就取消它，并且不影响另一个选择的node
+			path_endpoint[i]=EMPTY_node,
+			path_cnt=i^1,
+			frog=0;
+	}
+	if(frog)//否则就把它记录下来，且覆盖掉最开始选的点
+		path_cnt^=1,
+		path_endpoint[path_cnt]=tmp.nd;
+		
 	return 1;//需要重新渲染
 	
 /*	else
@@ -711,13 +769,21 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 					#endif
 				x1=x2=msg.x;//记下当前鼠标位置
 				y1=y2=msg.y;
-				isdrag=1;//标记为按下
-				cnt=0;//计时器
+				if(y1>=height_map_col)//点到窗口栏，直接交给窗口栏执行
+				{
+					if(bar_click(msg))
+						ui1();
+				}
+				else
+				{
+					isdrag=1;//标记为按下
+					cnt=0;//计时器
+				}
 			}
 			
 			else if(msg.is_left() && msg.is_up())//左键抬起，单击
 			{
-				if(cnt<=1)//如果鼠标按下左键后动了 或者 一秒后才抬起，那么就不要判定为单击
+				if(cnt<=1&&isdrag)//如果鼠标按下左键后动了 或者 一秒后才抬起，那么就不要判定为单击
 				{
 					clear=!cnt_path;
 					if(click(msg,iscontrol))
@@ -739,7 +805,7 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 					
 			else if(msg.is_right() && msg.is_down())//右键按下，中止
 			{
-				isbreak=1;
+				isquit=1;
 				return 1;
 			}
 			
@@ -777,7 +843,7 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 			
 			if(key.key==key_esc && key.msg==key_msg_down)//esc，退出
 			{
-				isbreak=1;
+				isquit=1;
 				return 1;
 			}
 			
@@ -805,7 +871,7 @@ inline int control()//处理全部鼠标信息 返回0：啥也不干 返回1：
 			if(key.key==key_control && key.msg==key_msg_down)//按下/松开control
 			{
 				iscontrol^=1;
-				ui1();
+				ui_bar();
 			}
 			
 			
@@ -839,18 +905,21 @@ inline void judge_ocean()//判断是否绘制海洋
 
 inline void choose_map()//选择要加载的地图
 {
+	cleardevice();
+	
 	setbkcolor(EGERGB(152,209,252));	//设置背景色为浅蓝（海的颜色）
 	setcolor(BLACK);
 	
 	settextjustify(CENTER_TEXT,CENTER_TEXT);//居中
-	setfont(30, 0, "宋体", 0, 0, FW_BOLD, 0, 0, 0);
 	setbkmode(TRANSPARENT);//文字背景透明
+	
+	ui_bar();//窗口栏
 	
 	//left top right bottom depth topflag
 	int bottom[][6]={{65,250,365,400,10,1},{425,250,725,400,10,1},{65,450,365,600,10,1},{425,450,725,600,10,1},{250,650,550,750,10,1},{-1,0,0,0,0,0}};
 	
-	ui_bar();//窗口栏
 	
+	setfont(30, 0, "宋体", 0, 0, FW_BOLD, 0, 0, 0);
 	outtextxy(400,150,"请选择你要加载的地图");
 	
 	setfillcolor(0xA8A8A8);//LIGHTGRAY
@@ -956,7 +1025,7 @@ inline void choose_map()//选择要加载的地图
 		setfont(35, 0, "宋体", 0, 0, FW_BOLD, 0, 0, 0);
 		outtextxy(400,400,"请点击控制台输入地图文件路径或相对路径");
 		
-		printf("请输入地图文件路径，或相对main.exe的路径，输入后请按enter\n");
+		printf("请输入地图文件（只能是.osm后缀文件）路径，或相对main.exe的路径，输入后请按enter\n");
 		
 		delay_ms(1);
 		char ch[100000];int cnt=0;
@@ -966,6 +1035,17 @@ inline void choose_map()//选择要加载的地图
 			ch[cnt++]=c;
 			c=getchar();
 		}
+		if(ch[cnt-4]!='.'||ch[cnt-3]!='o'||ch[cnt-2]!='s'||ch[cnt-1]!='m')//如果用户输入的后缀不是.osm，就帮他加上
+		{
+			for(int i=cnt-4;i<cnt;i++)//找一下用户有没有输入后缀，如果有的话直接改掉后缀
+				if(ch[i]=='.')
+				{
+					cnt=i;
+					break;
+				}
+			ch[cnt++]='.';ch[cnt++]='o';ch[cnt++]='s';ch[cnt++]='m';
+		}
+		ch[cnt]='\0';
 		map_list[pick]=ch;
 	}
 	
@@ -989,7 +1069,7 @@ inline void main_ui()
 	
 	bool opt;
 	
-	while(is_run()&&!isbreak)
+	while(is_run()&&!isquit)
 	{
 		opt=control();
 	}

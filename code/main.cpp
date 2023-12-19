@@ -32,7 +32,7 @@ using namespace std;
 //#define map_file_path "..\\map\\map_big.osm"
 #define map_file_path "..\\map\\map_bigger.osm"
 
-#include "common.cpp"
+#include "global.cpp"
 #include "read_map.cpp"
 #include "calculate.cpp"
 #include "shortest_path.cpp"

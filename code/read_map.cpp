@@ -537,7 +537,7 @@ struct Relation{
 				\n#  timestamp:\t ",id,changeset,uid,version,visible,cnt_member);
 		cout<<timestamp;
 		puts("\t\t#");
-		for(int i=0;i<cnt_tag;i++)printf("%s",tagv[i]);
+		for(int i=0;i<cnt_tag;i++)cout<<tagv[i][1]<<'|';//printf("%s",tagv[i]);
 		puts("\n#################################################\n");
 		return;
 	}
@@ -746,11 +746,11 @@ inline void get_all_way()//在vector类型way / area中储存所有点
 	
 	//按id排序
 	auto x=way.begin();x++;
-	sort(way.begin(),way.end());
+	sort(x,way.end());
 	sort(area.begin(),area.end());
 	
-	
-	for(auto x=way.begin(); x!=way.end() ; x++)//遍历所有way
+	x=way.begin();x++;
+	for(; x!=way.end() ; x++)//遍历所有way
 	{
 		wyy=*x;
 		way_xy2id.push_back((Tuple_Way){wyy.x1,wyy.y1,wyy.x2,wyy.y2,x});

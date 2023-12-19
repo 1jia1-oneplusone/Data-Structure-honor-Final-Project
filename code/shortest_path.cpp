@@ -225,13 +225,13 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 		{
 			add_edge(path_endpoint[i], tmp.nd, way.begin());
 			path_endpoint[i]->version=0;
+			cnt_node_storage+=2;
 		}
 		else
 		{
 			add_edge(path_endpoint[i], tmp.nd, way.begin());
 		}
 		
-		cnt_node_storage+=2;
 		
 	}
 	

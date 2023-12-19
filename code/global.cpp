@@ -84,7 +84,8 @@ int display_ocean=0;//是否绘制海洋
 int display_bus=0;//是否绘制公交线路
 int iscontrol;
 PIMAGE whole_map;//全地图
-bool isbreak=0;//是否退出程序
+bool isbreak=0;//是否退出地图程序
+bool isquit=0;//是否退出整个程序
 Node *path_endpoint[2];//要查询最短路的路径的端点
 int path_cnt;//记录2个路径端点选择的先后顺序
 Node *path_point[N];//记录最短路径的所有点
