@@ -218,13 +218,14 @@ struct Way{
 	int version,visible,isarea,cnt_node,cnt_tag;
 	int display;//是否有一部分显示在地图中
 	int x1,y1,x2,y2;//矩形的左上角，右下角
+	int isbus;//是否属于bus路线
 	string timestamp,user;
 	TiXmlElement *me;
 	
 	inline Way(){
 		id=changeset=uid=version=visible=midx=midy=x1=y1=x2=y2=EMPTY_number;
 		timestamp=user=EMPTY_string;
-		isarea=cnt_node=cnt_tag=display=x1=x2=y1=y2=0;
+		isarea=cnt_node=cnt_tag=display=x1=x2=y1=y2=isbus=0;
 		me=NULL;
 	}
 	
@@ -401,6 +402,7 @@ struct Relation{
 	int version,visible,isarea,cnt_member,cnt_tag;
 	int display;//是否有一部分显示在地图中
 	int x1,y1,x2,y2;//矩形的左上角，右下角
+	int isbus;//是否是公交路线
 	string timestamp,user;
 	TiXmlElement *me;
 	
@@ -433,7 +435,7 @@ struct Relation{
 //#define debug_tr_wa 
 	inline void travel_relation()//遍历一个relation的所有东西
 	{
-		TiXmlElement *nd = me->FirstChildElement("member");//先遍历member
+		TiXmlElement *nd ;
 		ll idd;
 		string type,role;
 		Node *tmp;
@@ -441,6 +443,25 @@ struct Relation{
 		midx=midy=0.0;
 		x1=y1=100000,x2=y2=-100000;
 		
+		nd = me->FirstChildElement("tag");//先遍历tag
+		string tmp1,tmp2;
+		int minn,len;
+		for(cnt_tag=0; nd; nd=nd->NextSiblingElement("tag"), cnt_tag++)
+		{
+			get_attribute_str(nd,"k",tmp1);
+			get_attribute_str(nd,"v",tmp2);
+			if(tmp2=="bus")
+				isbus=1;
+			tagk.push_back(tmp1);
+			tagv.push_back(tmp2);
+			
+			if(tmp2=="yes"||tmp2=="no")
+				tag_choice.insert(tmp1);
+		}
+		
+		sort();
+		
+		nd= me->FirstChildElement("member");//再遍历member
 		for(cnt_member=0; nd; nd=nd->NextSiblingElement("member"), cnt_member++)
 		{
 			get_attribute(nd,"ref",idd);
@@ -475,6 +496,7 @@ struct Relation{
 				{
 					mw_isarea.push_back(0);
 					myway.push_back(tmpp-way.begin());
+					(*tmpp).isbus=isbus;
 				}
 				
 				mw_role.push_back(role);
@@ -488,36 +510,6 @@ struct Relation{
 		}
 		
 		avgx/=cnt_member,avgy/=cnt_member;
-		
-		nd = me->FirstChildElement("tag");//再遍历tag
-		string tmp1,tmp2;
-		int minn,len;
-		for(cnt_tag=0; nd; nd=nd->NextSiblingElement("tag"), cnt_tag++)
-		{
-			get_attribute_str(nd,"k",tmp1);
-			get_attribute_str(nd,"v",tmp2);
-/*			if(tmp1=="name"||tmp1=="name:en") //把过长的名字中间插入换行符
-			{
-				minn=len=tmp2.size();
-				if(len>25)
-				{
-					for(int i=len-1;i>=0;i--)
-					{
-						if(tmp2[i]==' ' && abs(i-(len>>1))<abs(minn-(len>>1)))
-							minn=i;
-					}
-					tmp2[minn]='n';
-					tmp2.insert(minn,"\\");
-				}
-			}*/
-			tagk.push_back(tmp1);
-			tagv.push_back(tmp2);
-			
-			if(tmp2=="yes"||tmp2=="no")
-				tag_choice.insert(tmp1);
-		}
-		
-		sort();
 		
 			#ifdef debug_tr_wa
 				puts("Finished: travel_way");

@@ -9,6 +9,7 @@ struct sp_{//shortest_path() 的优先队列用到的结构体，需要封装一
 	ll dis; //距离
 	Node *last,*now;
 	int from; //from=1/2 从path_endpoint[0]/从path_endpoint[1]访问
+	vector<Way>::iterator belong;//这条边是哪个way或area的
 	
 };
 inline const bool operator <(const sp_ &x,const sp_ &y)//重载<运算符，以便存放在priority_queue中
@@ -188,7 +189,8 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 		return 0;
 	}
 	
-	for(int i=0;i<=1;i++)//看看2个端点是不是原图不存在的点或者不在way上
+	//看看2个端点是不是原图不存在的点或者不在way上
+	for(int i=0;i<=1;i++)
 	{
 		if(path_endpoint[i]->version!=-1 && path_endpoint[i]->is_in_way())continue;
 		
@@ -237,18 +239,21 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 	
 	
 	priority_queue<sp_>q;
+	ll w;
 	Node *x,*y,*v,*ans,*ans2;
 	sp_ sp;
 	Edge e;
 	map<Node*,int>vis;//记录点是否访问过，1表示从path_endpoint[0]访问，2表示从path_endpoint[1]访问
 	map<Node*,Node*>last;//记录每个点的上一个点
-	map<Node*,ll>dis;//记录每个点离出发点的最短距离
+	map<Node*,ll>dis;//记录每个点离出发点的最短距离（带权）
+	map<Node*,ll>dis_real;//记录每个点离出发点的最短距离
 	int ok=0;
 	cnt_path=0;
 	
 	//初始化
 	q.push((sp_){0LL,EMPTY_node,path_endpoint[0],0}),
 	dis[path_endpoint[0]]=0;
+	dis_real[path_endpoint[0]]=0;
 	
 	while(q.size())
 	{
@@ -269,12 +274,16 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 		{
 			e=x->edge[i];
 			v=e.to;
+			w=e.val;
+			if(display_bus && (*e.belong).isbus)//如果是公交线路，而且用户想走公交线路，就降低公交线路的代价
+				w*=0.3;
 			if(vis[v])continue;
-			if(dis.find(v)!=dis.end()&&dis[x]+e.val>=dis[v])
+			if(dis.find(v)!=dis.end()&&dis[x]+w>=dis[v])
 				continue;
 				
-			dis[v]=dis[x]+e.val;
-			sp.last=x,sp.now=v,sp.dis=-dis[v];
+			dis[v]=dis[x]+w;
+			dis_real[v]=dis_real[x]+e.val;
+			sp.last=x, sp.now=v, sp.dis=-dis[v], sp.belong=e.belong;
 			q.push(sp);
 		}
 		
@@ -290,7 +299,7 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 	}
 		
 	
-	for(v=path_endpoint[1];v!=EMPTY_node;cnt_path++,v=last[v])//再存另一段
+	for(v=path_endpoint[1];v!=EMPTY_node;cnt_path++,v=last[v])//存下路径
 	{
 		path_point[cnt_path]=v;
 	}
@@ -300,7 +309,7 @@ inline int shortest_path()//查询2点间最短路,a*单向搜索
 			puts("");
 		#endif
 	
-	printf("两点间最短路径长度为：%lf公里\n",dis[x]/1000.0);
+	printf("两点间最短路径长度为：%lf公里\n",dis_real[path_endpoint[1]]/1000.0);
 	
 	return 1;
 }
