@@ -1,8 +1,3 @@
-#define hide 
-#define debug 
-//#define debug_ge_at 
-//#define debug_tr_wa 
-
 #include <iostream>
 #include <algorithm>
 #include <cmath>
@@ -28,12 +23,8 @@
 #include "..\\tinyxml\\tinyxmlparser.cpp"
 using namespace std;
 
-//#define map_file_path "..\\map\\Gulang Island.osm"
-//#define map_file_path "..\\map\\map_big.osm"
-#define map_file_path "..\\map\\map_bigger.osm"
-
 #include "global.cpp"
-#include "read_map.cpp"
+#include "parse_map.cpp"
 #include "calculate.cpp"
 #include "shortest_path.cpp"
 #include "draw.cpp"
